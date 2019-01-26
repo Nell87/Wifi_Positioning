@@ -147,45 +147,32 @@ data_full<-data_full %>% select(-WAP248)     # 325 to 324 columns
 
 #### E. EXPLORATION PER USER ----------------------------------------------------------
 #### F. EXPLORATION PER BUILDING & FLOOR----------------------------------------------------------
-
-
-
-
-
-#### Z. OTHERS  ----------------------------------------------------------
-#Let's compare locations
+# Let's compare locations
 df_datatrain<-df_datatrain %>% mutate(Position=group_indices(df_datatrain, LATITUDE, LONGITUDE, FLOOR))
 df_datavalid<-df_datavalid %>% mutate(Position=group_indices(df_datavalid, LATITUDE, LONGITUDE, FLOOR))
 
 max(df_datatrain$Position)    # <- We have different positions in Train and Valid!!  O.O!!
 max(df_datavalid$Position)
-max(data_full$Position)
 
-##### 3.2. Add a variable combining Build + Floor ##### -------------------------
+#Add a variable combining Build + Floor _________________________
 # Add variable Build_Floor
-Data_Full$Build_floorID<-as.factor(group_indices(Data_Full, BUILDINGID, FLOOR))
+data_full$Build_floorID<-as.factor(group_indices(data_full, BUILDINGID, FLOOR))
 
-unique(Data_Full$Build_floorID) # <- 13 different floors 
+unique(data_full$Build_floorID) # <- 13 different floors 
 
-check_ID<-Data_Full%>%
+check_ID<-data_full%>%
   arrange(BUILDINGID, FLOOR)%>%
   distinct(BUILDINGID, FLOOR, Build_floorID)%>%
   select(BUILDINGID, FLOOR, Build_floorID) #sIDs assigned sequentially. OK!!
 
 rm(check_ID)
 
-#### 4. EXPLORING STRANGE "THINGS"####
-# Are there same HighWAP in different Buildings?
-WAPS_Recoloc<-Data_Full %>%
-  select(HighWAP, BUILDINGID, source) %>%
-  distinct(HighWAP, BUILDINGID, source)
 
-RepWAPS<-WAPS_Recoloc %>% distinct(HighWAP, BUILDINGID)
-RepWAPS<-sort(RepWAPS$HighWAP[duplicated(RepWAPS$HighWAP)]) 
-RepWAPS       # WAP 248 is highwap in the 3 buildings!!
+#### Z. OTHERS  ----------------------------------------------------------
+# New datasets prepared for modeling 
+Data_FullSplit<-split(data_full, data_full$source)
+list2env(Data_FullSplit, envir=.GlobalEnv)
+rm(Data_FullSplit)
 
-# Examine WAP 248
-WAP248<-Data_Full[Data_Full$HighWAP=="WAP248",313:326]
-plot(LATITUDE ~ LONGITUDE, data = Data_Full, pch = 20, col = "grey")
-points(LATITUDE ~ LONGITUDE, data=WAP248[WAP248$source=="DataTrain",], pch=20, col="blue")
-points(LATITUDE ~ LONGITUDE, data=WAP248[WAP248$source=="DataValid",], pch=20, col="red")
+write.csv(df_datatrain, "trainingData_prepared.csv")
+write.csv(df_datatrain, "validationData_prepared.csv")

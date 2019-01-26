@@ -1,14 +1,21 @@
-# Load previous code
-setwd("C:/SARA/PORTFOLIO/Wifi_Positioning/src/")
-source("0.1.initial_exploration_preprocess.R") # Change it to read new prepared dataset
+#### 0. INCLUDES  --------------------------------------------------------------------
+#source("0.1.initial_exploration_preprocess.R") 
+
+#Load Libraries: p_load can install, load,  and update packages
+if(require("pacman")=="FALSE"){
+  install.packages("pacman")
+} 
+
+pacman::p_load(dplyr, lubridate, caret)
+
+# Setwd
+setwd("C:/SARA/PORTFOLIO/Wifi_Positioning/data/")
+
+# Load Data
+df_datatrain <- read.csv2("trainingData_prepared.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
+df_datavalid<-read.csv2("validationData_prepared.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
 
 #### A. PREPARING FOR MODELING #### -----------------------------------------------------------------------------
-
-# Split Data before modeling 
-Data_FullSplit<-split(data_full, data_full$source)
-list2env(Data_FullSplit, envir=.GlobalEnv)
-rm(Data_FullSplit)
-
 # Create a DataValidOriginal for analyzing performance 
 df_datavalid_orig<-df_datavalid
 
