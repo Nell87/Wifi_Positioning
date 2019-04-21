@@ -6,14 +6,18 @@ if(require("pacman")=="FALSE"){
   install.packages("pacman")
 } 
 
-pacman::p_load(dplyr, lubridate, caret)
+pacman::p_load(rstudioapi,dplyr, lubridate, caret)
 
-# Setwd
-setwd("C:/SARA/PORTFOLIO/Wifi_Positioning/data/")
+# Setwd (1º current wd where is the script, then we move back to the 
+# general folder)
+current_path = getActiveDocumentContext()$path 
+setwd(dirname(current_path))
+setwd("..")
+rm(current_path)
 
 # Load Data
-df_datatrain <- read.csv2("trainingData.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
-df_datavalid<-read.csv2("validationData.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
+df_datatrain <- read.csv2("data/trainingData.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
+df_datavalid<-read.csv2("data/validationData.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
 
 #### A. FIRST CHECKS ---------------------------------------------------------
 # Dimension Variables 
