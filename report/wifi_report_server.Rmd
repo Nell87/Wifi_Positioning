@@ -1,0 +1,70 @@
+---
+title: "Wifi positioning"
+author: "Sara Marín"
+date: "01/10/2019"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 4
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+---
+
+<html>
+  <head>
+  <style type="text/css">
+    * {
+      text-align: justify;
+    }
+    
+    h2 {
+      color: MidnightBlue;    
+      font-weight: bold;
+    }
+    
+    h3 {
+      color: MidnightBlue;    
+    }
+    
+    h4 {
+       color: SteelBlue;    
+     
+    }
+    
+  </style>
+  </head>
+  <body>
+
+Many real world applications need to know the localization of a user in the world to provide their services. Outdoor localization problem can be solved very accurately thanks to the inclusion of GPS sensors into the mobile devices. However, indoor localization is still an open problem mainly due to the loss of GPS signal in indoor environments. For this reason, we evaluated the application of machine learning techniques to this problem, replacing the GPS signal with WAPS signal.
+
+For this purpose, we're going to use the UJIIndoorLoc database. It covers three buildings of Universitat Jaume I with four or more floors. You can read more about this dataset [here](https://archive.ics.uci.edu/ml/datasets/ujiindoorloc)
+
+This report is intended to explain the process that I followed during the analysis. 
+
+```{r eval=TRUE, echo=FALSE, warning=FALSE, include=FALSE}
+
+# load Libraries: p_load can install, load,  and update packages
+
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Load Data
+df_datatrain <- read.csv2("trainingData.csv", header=TRUE, sep=",", stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
+
+df_datavalid<-read.csv2("validationData.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
+
+```
+
+## A. FIRST EXPLORATION & CLEANING
+### A.1. First steps ###
+We were provided with two datasets with the same number of variables:
+<ul>
+  <li>**Training Dataset**: it has 19,937 registers which were generated with an Android application called CaptureLoc. The users had to perform captures in different reference points.</li>
+  
+  <li>**Validation Dataset**: it has 1,111 registers which were generated with another Android application called ValidateLoc. This time, any reference point was provided to them, so they could capture signals in places which were not in the training phase.</li>
+</ul>
+
+
