@@ -58,13 +58,57 @@ df_datavalid<-read.csv2("validationData.csv", header=TRUE, sep=",",  stringsAsFa
 
 ```
 
-## A. FIRST EXPLORATION & CLEANING
-### A.1. First steps ###
-We were provided with two datasets with the same number of variables:
+## A. FIRST EXPLORATION ##
+### A.1. Exploratory analysis ###
+**We were provided with two datasets with the same number of variables**:
 <ul>
   <li>**Training Dataset**: it has 19,937 registers which were generated with an Android application called CaptureLoc. The users had to perform captures in different reference points.</li>
   
   <li>**Validation Dataset**: it has 1,111 registers which were generated with another Android application called ValidateLoc. This time, any reference point was provided to them, so they could capture signals in places which were not in the training phase.</li>
 </ul>
+
+**We start the exploration part analyzing if the different variables make sense and provide useful information for our goal:**
+<ul>
+  <li>**WAPS**: we have 520 different WAPS with signals from -104 to 0</li>
+  ![](WIFI-waps.png)
+  <li>**The Building ID**: we have three different buildings (0,1,2)</li></br>
+  <li>**The Floor**: we have four floors in the buildings 0 and 1 and five floors in the building 2.</li>
+  ![](floor.png){width=450px}
+  <li>**The latitude**: -7691.338 to -7300.819</li></br>
+  <li>**The longitude**:4.864.746 to 4.865.017</li></br>
+  <li>**Space ID**: It’s used to identify the particular space (offices, labs, etc.). We have 123 types.</li></br>
+  <li>**Relative Position**: It’s the relative position with respect to the space. It can be 1 (inside) or 2 (outside).</li></br>
+  <li>**The user id**: 18 users participated in the procedure to generate the training samples. This field was no recorded in the validation phase, so the default value 0 was used to denote it.</li>
+  ![](users.png){width=250px}
+  <li>**The phone id**: 20 devices were used (25 if the Android version is considered).
+</li>
+<li>**The timestamp id**: the training phase took place during six days (from 30 May to 20 June 2013) and the validation phase during 9 days (from 19 Sep to 08 Oct)</li>
+![](timestamp.png){width=350px}
+</ul>
+
+### A.2. Cleaning process ###
+**In this process, we transform the raw data into consistent data that can be analyzed.**
+<ul>
+  <li>**Remove duplicated observations**: 637 duplicated registers</li>
+  <li>**Handle missing values**: we didn’t find any missing value.</li>
+  <li>**Change the value of WAPS = 100 to -110**
+  <li>**Review the type of variables**: we carried out some tranformations</li>
+  <li>**Get rid of the user 6**: it has 44% of the signals above -30, and it doesn't make sense.  </li>
+  <li>**Remove “near-zero variance” predictors and registers**: this way we reduced the relevant waps to 313. We also removed 76 observations.</li>
+  <li>**Remove WAP 248**: it seems to be in all buildings </li>
+</ul>
+
+## B. FEATURE ENGINEERING ##
+It’s about creating new input features from the existing ones (we will use them in our predictions):
+<ul>
+<li>**The highes WAP**: we added to each row the name of the wap with the highest signal (in that register)</li>
+<li>**The higher RSSI**: we added to each row the signal of the wap with the highest signal (in that register)</li>
+<li>**A new ID combining building + Floor**: this way, we have 13 new combinations.</li>
+</ul>
+
+## C. MODELING ##
+
+
+## E. ERROR ANALYSIS ##
 
 

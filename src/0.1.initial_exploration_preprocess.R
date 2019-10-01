@@ -6,7 +6,7 @@ if(require("pacman")=="FALSE"){
   install.packages("pacman")
 } 
 
-pacman::p_load(rstudioapi,dplyr, lubridate, caret)
+pacman::p_load(rstudioapi,dplyr, lubridate, caret, reshape2)
 
 # Setwd (1º current wd where is the script, then we move back to the 
 # general folder)
@@ -65,15 +65,62 @@ WAPS<-grep("WAP", names(data_full), value=T)
 NOWAPS<-names(df_datatrain[names(df_datatrain) %ni% WAPS])
 
 
-#### C. EXPLORATION WAPS ----------------------------------------------------------
+#### C. EXPLORATORY ANALYSIS  ----------------------------------------------------------
+##### C.1. RSSI ######   
+
 # Change value of WAPS= 100 to WAPS=-110 __________________________
 data_full[,WAPS] <- sapply(data_full[,WAPS],function(x) ifelse(x==100,-110,x))
 
-# Remove rows with no variance ____________________________________
+# Let's see if we have signal >=30 __________________________
+# Let's reshape 
+data_full_melt<-melt(data_full, id.vars=c("id", "LATITUDE", "LONGITUDE", "FLOOR", "BUILDINGID", 
+                                        "SPACEID", "RELATIVEPOSITION", "USERID", "PHONEID",
+                                        "TIMESTAMP", "source"), variable.name = "WAP", value.name="RSSI")
+
+# Let's see if we have signal >=30
+df_datatrain_RSSI<-data_full_melt %>%
+  filter(source=="df_datatrain" & RSSI>=-30) %>%
+  select(RSSI, USERID, PHONEID) %>%
+  group_by(RSSI, USERID, PHONEID) %>%
+  summarise(N=n())                     # <- # We have values higher than -30 in Train (not in Test). 
+                                       # It doesn't make sense! x_X 
+
+# Let's plot these signals
+df_datatrain_RSSI<-data_full_melt %>%
+  filter(source=="df_datatrain" & RSSI>=-30) %>%
+  select(RSSI, USERID, PHONEID, LATITUDE, LONGITUDE, BUILDINGID, FLOOR) %>%
+  group_by(RSSI, USERID, PHONEID,LATITUDE, LONGITUDE, BUILDINGID, FLOOR) %>%
+  summarise(N=n())  
+
+ggplot(df_datatrain_RSSI, aes(x = LONGITUDE, y = LATITUDE))  + 
+  geom_point(aes(color=USERID)) + 
+  facet_wrap(~FLOOR)      # <- USERID 6 IS WRONG!!!!  Let's see the percentage of errors
+
+# Let's explore USERID 6: how many records have a signal >-30?
+df_datatrain_user6<-data_full %>%
+  filter(source=="df_datatrain" & USERID==6) 
+
+df_datatrain_user6["max_signal"] <- apply(df_datatrain_user6[WAPS], 1, max)
+
+df_datatrain_user6$state_signal<- ifelse(df_datatrain_user6$max_signal>=-30, "Strange", "Ok")
+
+ggplot(df_datatrain_user6, aes(x=LONGITUDE, y=LATITUDE, color=state_signal)) + 
+  geom_point() # There are many weird signals
+
+df_datatrain_user6 %>% 
+  select(state_signal) %>%
+  group_by(state_signal) %>%
+  summarise(N=n()/nrow(df_datatrain_user6)) # 44% is weird, so let's remove user 6
+
+rm(df_datatrain_RSSI, df_datatrain_user6, data_full_melt)
+data_full <- data_full %>% filter(!USERID==6)
+df_datatrain <- df_datatrain %>% filter(!USERID==6)
+
+# Remove WAPS with no variance ____________________________________
 # New WAPS
 WAPS<-grep("WAP", names(data_full), value=T)
 
-# Filter Rows with all RSSI = -110        <- From 20411 to 20338 row
+# Filter Rows with all RSSI = -110        <- From 19434 to 19361 row
 data_full <- data_full %>% 
   filter(apply(data_full[WAPS], 1, function(x)length(unique(x)))>1)
 
@@ -144,12 +191,14 @@ data_full<-data_full %>% select(-WAP248)     # 325 to 324 columns
 
 
 
+
 #### D. EXPLORATION PER PHONE ----------------------------------------------------------
 
 
 
 
 #### E. EXPLORATION PER USER ----------------------------------------------------------
+
 #### F. EXPLORATION PER BUILDING & FLOOR----------------------------------------------------------
 # Let's compare locations
 df_datatrain<-df_datatrain %>% mutate(Position=group_indices(df_datatrain, LATITUDE, LONGITUDE, FLOOR))
