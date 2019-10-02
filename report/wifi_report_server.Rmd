@@ -107,18 +107,21 @@ It’s about creating new input features from the existing ones (we will use the
 </ul>
 
 ## C. MODELING & ERROR ANALYSIS ##
-Here you can see a summary of the models that we trained. We selected the best models based on the analysis of error:</br>
-  <li>**In classification**: we tried to avoid large errors in the identification of the floor, so we checked the classification matrix. For example: a large error can be predicting that someone is going to be on floor 3 when this person is actually on floor 0. </li>
+Here you can see a summary of the models that we trained. We selected the best models based on the analysis of the errors: </br>
+<ul>
+  <li>**In classification**: we tried to avoid large errors in the identification of the floor, so we checked the classification matrix. For example, a large error can be predicting that someone is going to be on floor 3 when this person is actually on floor 0. </li>
   ![](Models_Build_Floor.PNG){width=500px}
-  </br>
+ 
   <li>**In regression**: we tried to avoid those models with large outliers (even if they have a better R2/RMSE), so we checked the distribution of the errors</li>
    ![](floor.png) 
 </ul>
 
-## D. RECOMMENDATIONS ##
+## D. CONCLUSIONS ##
 
 ## E. NEXT STEPS ##
+- Improve the report
 - Normalize rows
+- PCA
 
 
 

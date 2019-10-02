@@ -7,7 +7,7 @@ if(require("pacman")=="FALSE"){
 } 
 
 pacman::p_load(rstudioapi,dplyr, lubridate, caret,parallel,doParallel,
-               randomForest, class,e1071)
+               randomForest, class,e1071, reshape2,RColorBrewer)
 
 # Setwd (1º current wd where is the script, then we move back to the 
 # general folder)
@@ -219,10 +219,75 @@ ConfusionMatrix
 
 rm(B2_floor_svm,Predictors_b2_floor, ConfusionMatrix)
 
+##### D.PREDICTING LONGITUDE PER BUILDING (1 model per building) ##### 
+WAPS<- intersect(grep("WAP",names(dt_b0),value=T),
+          grep("High",names(dt_b0),invert=TRUE,value=T))
+
+##### D.1. Longitude building 0 #####
+# Random forest ________________________________________________________________
+# bestmtry_dt_b0<-tuneRF(dt_b0[WAPS], dt_b0$LONGITUDE, ntreeTry=100, stepFactor=2, 
+#                       improve=0.05,trace=TRUE, plot=T)   # <- 52
+
+# system.time(B0_long_rf<-randomForest(y=dt_b0$LONGITUDE, x=dt_b0[WAPS], 
+#                                        importance=T,maximize=T,
+#                                         method="rf", trControl=fitControl,
+#                                         ntree=100, mtry=52,allowParalel=TRUE))
+# 
+# saveRDS(B0_long_rf, file = "./models/B0_long_rf.rds")
+
+B0_long_rf<-readRDS("./models/B0_long_rf.rds")
+Predictors_B0_long<-predict(B0_long_rf, dv_b0)
+B0_postResample<-postResample(Predictors_B0_long, dv_b0$LONGITUDE_orig)
+B0_postResample
+
+error_rf<- dv_b0$LONGITUDE_orig- Predictors_B0_long
+
+# KNN __________________________________________________________________________    
+# system.time(B0_long_knn<-knnreg(LONGITUDE ~., data = dt_b0[,c(WAPS, "LONGITUDE")]))
+# saveRDS(B0_long_knn, file = "./models/B0_long_knn.rds")
+
+B0_long_knn<-readRDS("./models/B0_long_knn.rds")
+Predictors_B0_long<-predict(B0_long_knn, dv_b0)
+B0_postResample<-postResample(Predictors_B0_long, dv_b0$LONGITUDE_orig)
+B0_postResample
+
+error_knn<- dv_b0$LONGITUDE_orig- Predictors_B0_long
+
+
+# SVM __________________________________________________________________________
+# system.time(B0_long_svm <- svm(y = dt_b0$LONGITUDE, x=dt_b0[WAPS], kernel = "linear"))
+# saveRDS(B0_long_svm, file = "./models/B0_long_svm.rds")
+
+B0_long_svm<-readRDS("./models/B0_long_svm.rds")
+Predictors_B0_long<-predict(B0_long_svm, dv_b0[WAPS])
+B0_postResample<-postResample(Predictors_B0_long, dv_b0$LONGITUDE_orig)
+B0_postResample
+
+error_svm<- dv_b0$LONGITUDE_orig- Predictors_B0_long
+
+# Plot the error distribution __________________________________________________
+error<-cbind(error_knn, error_rf, error_svm)
+error<-melt(error) %>% select(-Var1)
+colnames(error)<-c("Model", "Value")
+ggplot(error, aes(x=Value, fill=Model)) + 
+  geom_histogram(alpha = 0.3, aes(y = ..density..), position = 'identity') +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_x_continuous(breaks=seq(-50, 50, 10)) +
+  facet_grid(~Model)
 
 
 
 
+rm(error_rf, error_knn, error_svm,B0_long_rf,B0_long_knn, B0_long_svm, 
+   Predictors_B0_long,B0_postResample)
+
+##### D.2. Longitude building 1 #####
+##### D.3. Longitude building 2 #####
+
+##### E.PREDICTING LATITUDE PER BUILDING (1 model per building) ##### 
+##### E.1. Latitude building 0
+##### E.2. Latitude building 1
+##### E.3. Latitude building 2
 
 
 
@@ -578,77 +643,7 @@ DF_LAT10m<-DataValidOrig[DataValidOrig$ID %in% Indices10m, ]
 # rf_postRes_LAT_AllBSVM<-postResample(predictions_LAT_AllBSVM, DataValid$LATGITUDE)
 # rf_postRes_LAT_AllBSVM
 
-#### 12. PREDICTING FLOOR USING HighWAP #### ---------------------------------------------------------------------------
-##### 12.1. SVM #####    # <- Accuracy: 0.893   Kappa: 0.85    Time: 48 
-# system.time(Floor_HighWAP_SVM<-caret::train(FLOOR~HighWAP, data= DataTrain, method="svmLinear", 
-#                                               trControl=fitControl))
-# save(Floor_HighWAP_SVM, file = "Floor_HighWAP_SVM.rda")
 
-load("Floor_HighWAP_SVM.rda")
-predictions_Floor_HighWAPSVM<-predict(Floor_HighWAP_SVM, DataValid)
-ConfusionMatrix<-confusionMatrix(predictions_Floor_HighWAPSVM, DataValid$FLOOR) 
-ConfusionMatrix       
-rm(ConfusionMatrix)EXPL
-
-#### 13. PREDICTING Build_floorID USING HighWAP #### ---------------------------------------------------------------------------
-##### 13.1. SVM #####    # <- Accuracy: 0.893   Kappa: 0.880    Time: 56 
-# system.time(Build_floorID_HighWAP_SVM<-caret::train(Build_floorID~HighWAP, data= DataTrain, method="svmLinear", 
-#                                             trControl=fitControl))
-# save(Build_floorID_HighWAP_SVM, file = "Build_floorID_HighWAP_SVM.rda")
-
-load("Build_floorID_HighWAP_SVM.rda")
-predictions_Build_floorID_HighWAPSVM<-predict(Build_floorID_HighWAP_SVM, DataValid)
-ConfusionMatrix<-confusionMatrix(predictions_Build_floorID_HighWAPSVM, DataValid$Build_floorID) 
-ConfusionMatrix       
-rm(ConfusionMatrix)
-
-#### 14. PREDICTING FLOOR USING WAPS, LAT, LONG & DUMMY BUILDING #### ---------------------------------------------------------------------------
-# Add predicted longitude & latitude to DataValid
-Data_Full$LATITUDE[Data_Full$source=="DataValid"]<-predictions_LAT_AllBRF
-Data_Full$LONGITUDE[Data_Full$source=="DataValid"]<-predictions_LON_AllBRF
-
-# Split Data before modeling
-Data_FullSplit<-split(Data_Full, Data_Full$source)
-list2env(Data_FullSplit, envir=.GlobalEnv)
-rm(Data_FullSplit)
-
-# Random Forest        <- # Accuracy 0.918 Kappa 0.88   Time 208 sec
-# VarInd<-c(WAPS, "BUILDINGID.1", "BUILDINGID.2", "LATITUDE", "LONGITUDE)
-# bestmtry<-tuneRF(DataTrain[VarInd], DataTrain$FLOOR, ntreeTry=100, stepFactor=2, improve=0.05,  
-#                   trace=TRUE, plot=T)
-#  
-# system.time(FLOOR_BUILDLATLONG_RF<-randomForest(FLOOR~. -SPACEID -RELATIVEPOSITION -USERID -PHONEID 
-#                                         -TIMESTAMP -source -HighWAP -HighRSSI -Build_floorID -BUILDINGID -ID, 
-#                                         data= DataTrain, 
-#                                         importance=T,maximize=T,
-#                                         method="rf", trControl=fitControl,
-#                                         ntree=100, mtry= 34,allowParalel=TRUE))
-# save(FLOOR_BUILDLATLONG_RF, file = "FLOOR_BUILDLATLONG_RF.rda")
-
-load("FLOOR_BUILDLATLONG_RF.rda")
-predictions_Floor_BuilLatLongRF<-predict(FLOOR_BUILDLATLONG_RF, DataValid)
-rf_postRes_Floor_BuilLatLongRF<-postResample(predictions_Floor_BuilLatLongRF, DataValid$FLOOR)
-rf_postRes_Floor_BuilLatLongRF
-
-#### 15. PREDICTING Build_floorID USING WAPS, LAT & LONG  #### ---------------------------------------------------------------------------
-# Random Forest   <- # Accuracy 0.91   Kappa: 0.90   Time 155 sec 
-# VarInd<-c(WAPS, "LATITUDE", "LONGITUDE)
-# bestmtry<-tuneRF(DataTrain[VarInd], DataTrain$Build_floorID, ntreeTry=100, stepFactor=2, improve=0.05,  
-#                    trace=TRUE, plot=T)
-#   
-# system.time(BUILDFLOORID_LATLONG_RF<-randomForest(Build_floorID~. -SPACEID -RELATIVEPOSITION -USERID -PHONEID 
-#                                         -TIMESTAMP -source -HighWAP -HighRSSI -Build_floorID -BUILDINGID -FLOOR
-#                                         -BUILDINGID.1 -BUILDINGID.2 -ID, 
-#                                         data= DataTrain, 
-#                                         importance=T,maximize=T,
-#                                         method="rf", trControl=fitControl,
-#                                         ntree=100, mtry= 34,allowParalel=TRUE))
-# save(BUILDFLOORID_LATLONG_RF, file = "BUILDFLOORID_LATLONG_RF.rda")
-
-load("BUILDFLOORID_LATLONG_RF.rda")
-predictions_BuildFloorID_LatLongRF<-predict(BUILDFLOORID_LATLONG_RF, DataValid)
-rf_postRes_BuildFloorID_LatLongRF<-postResample(predictions_BuildFloorID_LatLongRF, DataValid$Build_floorID)
-rf_postRes_BuildFloorID_LatLongRF
 
 #### 16. FINAL VISUALIZATION ####
 # Add predicted floor
