@@ -132,8 +132,92 @@ ConfusionMatrix
 rm(B0_floor_svm,Predictors_B0_floor, ConfusionMatrix)
 
 ##### C.2. Floor Building 1 ##### 
-##### C.3. Floor Building 2 ##### 
+# Reset the levels
+dt_b1$FLOOR<-as.factor(as.character(dt_b1$FLOOR))
+dv_b1$FLOOR_orig<-as.factor(as.character(dv_b1$FLOOR_orig))
+levels(dt_b1$FLOOR) # 4 levels
 
+# Random forest ________________________________________________________________
+# bestmtry_dt_b1<-tuneRF(dt_b1[WAPS], dt_b1$FLOOR, ntreeTry=100, stepFactor=2, 
+#                        improve=0.05,trace=TRUE, plot=T)   # <- 68
+
+# system.time(B1_floor_rf<-randomForest(y=dt_b1$FLOOR, x=dt_b1[WAPS], 
+#                                        importance=T,maximize=T,
+#                                         method="rf", trControl=fitControl,
+#                                         ntree=100, mtry=68,allowParalel=TRUE))
+
+# saveRDS(B1_floor_rf, file = "./models/B1_floor_rf.rds")
+
+B1_floor_rf<-readRDS("./models/b1_floor_rf.rds")
+Predictors_b1_floor<-predict(B1_floor_rf, dv_b1)
+ConfusionMatrix<-confusionMatrix(Predictors_b1_floor, dv_b1$FLOOR_orig) 
+ConfusionMatrix
+
+rm(B1_floor_rf,Predictors_b1_floor, ConfusionMatrix)
+
+# KNN __________________________________________________________________________    
+system.time(floor_b1_knn_pred<- knn(train = dt_b1[1:311], 
+                                    test = dv_b1[1:311], 
+                                    cl = dt_b1$FLOOR))
+
+ConfusionMatrix<-confusionMatrix(floor_b1_knn_pred, dv_b1$FLOOR_orig) 
+ConfusionMatrix
+rm(ConfusionMatrix, floor_b1_knn_pred)
+
+# SVM __________________________________________________________________________
+# system.time(B1_floor_svm <- svm(y = dt_b1$FLOOR, x=dt_b1[WAPS], kernel = "linear"))
+# saveRDS(B1_floor_svm, file = "./models/B1_floor_svm.rds")
+
+B1_floor_svm<-readRDS("./models/B1_floor_svm.rds")
+Predictors_b1_floor<-predict(B1_floor_svm, dv_b1[WAPS])
+ConfusionMatrix<-confusionMatrix(Predictors_b1_floor, dv_b1$FLOOR_orig) 
+ConfusionMatrix
+
+rm(B1_floor_svm,Predictors_b1_floor, ConfusionMatrix)
+
+##### C.3. Floor Building 2 ##### 
+# Reset the levels
+dt_b2$FLOOR<-as.factor(as.character(dt_b2$FLOOR))
+dv_b2$FLOOR_orig<-as.factor(as.character(dv_b2$FLOOR_orig))
+levels(dt_b2$FLOOR) # 4 levels
+
+# Random forest ________________________________________________________________
+# bestmtry_dt_b2<-tuneRF(dt_b2[WAPS], dt_b2$FLOOR, ntreeTry=100, stepFactor=2, 
+#                         improve=0.05,trace=TRUE, plot=T)   # <- 34
+
+# system.time(B2_floor_rf<-randomForest(y=dt_b2$FLOOR, x=dt_b2[WAPS], 
+#                                         importance=T,maximize=T,
+#                                          method="rf", trControl=fitControl,
+#                                          ntree=100, mtry=34,allowParalel=TRUE))
+
+# saveRDS(B2_floor_rf, file = "./models/B2_floor_rf.rds")
+
+B2_floor_rf<-readRDS("./models/B2_floor_rf.rds")
+Predictors_b2_floor<-predict(B2_floor_rf, dv_b2)
+ConfusionMatrix<-confusionMatrix(Predictors_b2_floor, dv_b2$FLOOR_orig) 
+ConfusionMatrix
+
+rm(B2_floor_rf,Predictors_b2_floor, ConfusionMatrix)
+
+# KNN __________________________________________________________________________    
+system.time(floor_b2_knn_pred<- knn(train = dt_b2[1:311], 
+                                    test = dv_b2[1:311], 
+                                    cl = dt_b2$FLOOR))
+
+ConfusionMatrix<-confusionMatrix(floor_b2_knn_pred, dv_b2$FLOOR_orig) 
+ConfusionMatrix
+rm(ConfusionMatrix, floor_b2_knn_pred)
+
+# SVM __________________________________________________________________________
+system.time(B2_floor_svm <- svm(y = dt_b2$FLOOR, x=dt_b2[WAPS], kernel = "linear"))
+saveRDS(B2_floor_svm, file = "./models/B2_floor_svm.rds")
+
+B2_floor_svm<-readRDS("./models/B2_floor_svm.rds")
+Predictors_b2_floor<-predict(B2_floor_svm, dv_b2[WAPS])
+ConfusionMatrix<-confusionMatrix(Predictors_b2_floor, dv_b2$FLOOR_orig) 
+ConfusionMatrix
+
+rm(B2_floor_svm,Predictors_b2_floor, ConfusionMatrix)
 
 
 
