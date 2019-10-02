@@ -58,7 +58,7 @@ df_datavalid<-read.csv2("validationData.csv", header=TRUE, sep=",",  stringsAsFa
 
 ```
 
-## A. FIRST EXPLORATION ##
+## A. FIRST STEPS ##
 ### A.1. Exploratory analysis ###
 **We were provided with two datasets with the same number of variables**:
 <ul>
@@ -86,7 +86,7 @@ df_datavalid<-read.csv2("validationData.csv", header=TRUE, sep=",",  stringsAsFa
 ![](timestamp.png){width=350px}
 </ul>
 
-### A.2. Cleaning process ###
+### A.2. Cleaning and preparing dataset ###
 **In this process, we transform the raw data into consistent data that can be analyzed.**
 <ul>
   <li>**Remove duplicated observations**: 637 duplicated registers</li>
@@ -106,9 +106,18 @@ It’s about creating new input features from the existing ones (we will use the
 <li>**A new ID combining building + Floor**: this way, we have 13 new combinations.</li>
 </ul>
 
-## C. MODELING ##
+## C. MODELING & ERROR ANALYSIS ##
+Here you can see a summary of the models that we trained. We selected the best models based on the analysis of error:</br>
+  <li>**In classification**: we tried to avoid large errors in the identification of the floor, so we checked the classification matrix. For example: a large error can be predicting that someone is going to be on floor 3 when this person is actually on floor 0. </li>
+  ![](floor.png)
+  <li>**In regression**: we tried to avoid those models with large outliers (even if they have a better R2/RMSE), so we checked the distribution of the errors</li>
+   ![](floor.png) 
+</ul>
 
+## D. RECOMMENDATIONS ##
 
-## E. ERROR ANALYSIS ##
+## E. NEXT STEPS ##
+- 
+
 
 

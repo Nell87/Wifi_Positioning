@@ -177,7 +177,7 @@ WAPS_Recoloc<-data_full %>%
 RepWAPS<-WAPS_Recoloc %>% distinct(HighWAP, BUILDINGID)
 RepWAPS<-RepWAPS %>% group_by(HighWAP) %>% summarise(count=n())
                     # WAP 248 is highwap in the 3 buildings!!
-rm(RepWAPS, WAPS_Recoloc)
+rm(RepWAPS, WAPS_Recoloc, remove_WAPs)
 
 # Examine WAP 248
 WAP248 <- data_full %>% select(NOWAPS, source) %>% 
@@ -186,16 +186,12 @@ plot(LATITUDE ~ LONGITUDE, data = data_full, pch = 20, col = "grey")
 points(LATITUDE ~ LONGITUDE, data=WAP248[WAP248$source=="df_datatrain",], pch=20, col="blue")
 points(LATITUDE ~ LONGITUDE, data=WAP248[WAP248$source=="df_datavalid",], pch=20, col="red")
 
+rm(WAP248)
+
 # Let's remove it 
 data_full<-data_full %>% select(-WAP248)     # 325 to 324 columns
 
-
-
-
 #### D. EXPLORATION PER PHONE ----------------------------------------------------------
-
-
-
 
 #### E. EXPLORATION PER USER ----------------------------------------------------------
 
@@ -227,5 +223,5 @@ Data_FullSplit<-split(data_full, data_full$source)
 list2env(Data_FullSplit, envir=.GlobalEnv)
 rm(Data_FullSplit)
 
-write.csv(df_datatrain, "trainingData_prepared.csv")
-write.csv(df_datatrain, "validationData_prepared.csv")
+# write.csv(df_datatrain, "./data/trainingData_prepared.csv",row.names=FALSE)
+# write.csv(df_datavalid, "./data/validationData_prepared.csv",row.names=FALSE)

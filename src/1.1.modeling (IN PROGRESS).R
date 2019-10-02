@@ -6,7 +6,8 @@ if(require("pacman")=="FALSE"){
   install.packages("pacman")
 } 
 
-pacman::p_load(rstudioapi,dplyr, lubridate, caret,parallel,doParallel,randomForest)
+pacman::p_load(rstudioapi,dplyr, lubridate, caret,parallel,doParallel,
+               randomForest, class,e1071)
 
 # Setwd (1º current wd where is the script, then we move back to the 
 # general folder)
@@ -16,14 +17,16 @@ setwd("..")
 rm(current_path)
 
 # Load Data
-df_datatrain <- read.csv2("data/trainingData_prepared.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
-df_datavalid<-read.csv2("data/validationData_prepared.csv", header=TRUE, sep=",",  stringsAsFactors=FALSE, na.strings=c("NA", "-", "?"))
+df_datatrain <- read.csv("data/trainingData_prepared.csv", 
+                          stringsAsFactors=FALSE, row.names = NULL,
+                          na.strings=c("NA", "-", "?"))
 
-df_datatrain$X<-NULL
-df_datavalid$X<-NULL
+df_datavalid<-read.csv("data/validationData_prepared.csv", 
+                         stringsAsFactors=FALSE, row.names = NULL,
+                         na.strings=c("NA", "-", "?"), )
 
 # Transform some variables to factor/numeric/datetime
-factors<-c("FLOOR", "BUILDINGID", "SPACEID", "RELATIVEPOSITION", "USERID", "PHONEID")
+factors<-c("FLOOR", "BUILDINGID", "RELATIVEPOSITION", "USERID", "PHONEID")
 df_datatrain[,factors]<-lapply(df_datatrain[,factors], as.factor)
 df_datavalid[,factors]<-lapply(df_datavalid[,factors], as.factor)
 rm(factors)
@@ -36,7 +39,8 @@ rm(numeric)
 
 #### A. PREPARING FOR MODELING #### -----------------------------------------------------------------------------
 # Change some names for analyzing performance 
-df_datavalid <- df_datavalid %>% rename(BUILDINGID_orig = BUILDINGID, LONGITUDE_orig = LONGITUDE,
+df_datavalid <- df_datavalid %>% rename(BUILDINGID_orig = BUILDINGID, 
+                                        LONGITUDE_orig = LONGITUDE,
                                         LATITUDE_orig=LATITUDE, FLOOR_orig=FLOOR)
 
 
@@ -45,33 +49,109 @@ cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
 
 # 10 fold cross validation    
-fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3, allowParallel = TRUE)
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 3, 
+                           allowParallel = TRUE)
 
 WAPS<-grep("WAP", names(df_datatrain), value=T)
 
 #### B. PREDICTING BUILDING ####----------------------------------------------------------------------
-# Train dt model        <-- 52.03 sec elapsed       Accuracy:1  Kappa: 1
-#  system.time(Building_SVM01<-caret::train(BUILDINGID~HighWAP, data= df_datatrain, method="svmLinear", 
-#                               trControl=fitControl))
-#  save(Building_SVM01, file = "./models/Building_SVM01.rda")
+# Train dt model        <-- 38.67 sec elapsed       Accuracy:1  Kappa: 1
+# system.time(Building_SVM01<-caret::train(BUILDINGID~HighWAP, data= df_datatrain, method="svmLinear", 
+#                                trControl=fitControl))
+# saveRDS(Building_SVM01, file = "./models/Building_SVM01.rds")
 
-load("./models/Building_SVM01.rda")
+Building_SVM01<-readRDS("./models/Building_SVM01.rds")
 PredictorsBuild<-predict(Building_SVM01, df_datavalid)
 ConfusionMatrix<-confusionMatrix(PredictorsBuild, df_datavalid$BUILDINGID_orig) # Accuracy:1 Kappa:1
 
 ConfusionMatrix
-rm(ConfusionMatrix)
 
 # Add building Predictions in DataValidation
 df_datavalid$BUILDINGID<-PredictorsBuild
 
-#### C. PREDICTING LONGITUDE PER BUILDING (1 model per building) ####-------------------------------------------------------------
-# Split DataTrain per Building
+rm(ConfusionMatrix, Building_SVM01, PredictorsBuild)
+
+#### C. PREDICTING FLOOR PER BUILDING (1 model per building) ####-------------------------------------------------------------
+WAPS<-grep("^[^HighWAP]*[WAP][^HighWAP]*$", names(df_datatrain), value=T)
+
+WAPS<-setdiff(grep('WAP', names(df_datatrain),value=T), 
+              grep('HighWAP', names(df_datatrain),value=T))
+
+# Split DataTrain & Valid per Building
 Buildings<-split(df_datatrain, df_datatrain$BUILDINGID)
-names(Buildings)<-c("BUILDING0", "BUILDING1", "BUILDING2")
+names(Buildings)<-c("dt_b0", "dt_b1", "dt_b2")
 list2env(Buildings, envir = .GlobalEnv)
 
-##### C.1. Random Forest ##### 
+Buildings<-split(df_datavalid, df_datavalid$BUILDINGID)
+names(Buildings)<-c("dv_b0", "dv_b1", "dv_b2")
+list2env(Buildings, envir = .GlobalEnv)
+rm(Buildings)
+
+##### C.1. Floor Building 0 ##### 
+# Reset the levels
+dt_b0$FLOOR<-as.factor(as.character(dt_b0$FLOOR))
+dv_b0$FLOOR_orig<-as.factor(as.character(dv_b0$FLOOR_orig))
+levels(dt_b0$FLOOR) # 4 levels
+
+# Random forest ________________________________________________________________
+# bestmtry_dt_b0<-tuneRF(dt_b0[WAPS], dt_b0$FLOOR, ntreeTry=100, stepFactor=2, 
+#                      improve=0.05,trace=TRUE, plot=T)   # <- 34
+
+# system.time(B0_floor_rf<-randomForest(y=dt_b0$FLOOR, x=dt_b0[WAPS], 
+#                                       importance=T,maximize=T,
+#                                        method="rf", trControl=fitControl,
+#                                        ntree=100, mtry=34,allowParalel=TRUE))
+
+# saveRDS(B0_floor_rf, file = "./models/B0_floor_rf.rds")
+
+B0_floor_rf<-readRDS("./models/B0_floor_rf.rds")
+Predictors_B0_floor<-predict(B0_floor_rf, dv_b0)
+ConfusionMatrix<-confusionMatrix(Predictors_B0_floor, dv_b0$FLOOR_orig) 
+ConfusionMatrix
+
+rm(B0_floor_rf,Predictors_B0_floor, ConfusionMatrix)
+
+# KNN __________________________________________________________________________    
+system.time(floor_b0_knn_pred<- knn(train = dt_b0[1:311], 
+                               test = dv_b0[1:311], 
+                               cl = dt_b0$FLOOR))
+
+ConfusionMatrix<-confusionMatrix(floor_b0_knn_pred, dv_b0$FLOOR_orig) 
+ConfusionMatrix
+rm(ConfusionMatrix, floor_b0_knn_pred)
+
+# SVM __________________________________________________________________________
+# system.time(B0_floor_svm <- svm(y = dt_b0$FLOOR, x=dt_b0[WAPS], kernel = "linear"))
+# saveRDS(B0_floor_svm, file = "./models/B0_floor_svm.rds")
+
+B0_floor_svm<-readRDS("./models/B0_floor_svm.rds")
+Predictors_B0_floor<-predict(B0_floor_svm, dv_b0[WAPS])
+ConfusionMatrix<-confusionMatrix(Predictors_B0_floor, dv_b0$FLOOR_orig) 
+ConfusionMatrix
+
+rm(B0_floor_svm,Predictors_B0_floor, ConfusionMatrix)
+
+##### C.2. Floor Building 1 ##### 
+##### C.3. Floor Building 2 ##### 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Random Forest -B0-    <- # RMSE 7.01  R 0.932  MAE 4.64 TIME 52   
 # WAPS
 WAPS_B0<-intersect(grep("WAP",names(BUILDING0),value=T),
