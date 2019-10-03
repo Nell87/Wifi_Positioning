@@ -6,7 +6,7 @@ Many real-world applications need to know the localization of a user in the worl
 For this purpose, we're going to use the UJIIndoorLoc database. It covers three buildings of Universitat Jaume I with four or more floors. You can read more about this dataset [here](https://archive.ics.uci.edu/ml/datasets/ujiindoorloc).
 
 # TECHNICAL APPROACH
-This is only a summary of the process, If you want to know more details, you can read the report in **saramarlop.com**
+This is only a summary of the process, If you want to know more details, you can read the report in [saramarlop.com](http://saramarlop.com/)
 
 ## 1. FIRST STEPS
 
