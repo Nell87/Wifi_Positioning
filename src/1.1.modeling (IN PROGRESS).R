@@ -7,7 +7,7 @@ if(require("pacman")=="FALSE"){
 } 
 
 pacman::p_load(rstudioapi,dplyr, lubridate, caret,parallel,doParallel,
-               randomForest, class,e1071, reshape2,RColorBrewer)
+               randomForest, class,e1071, reshape2,RColorBrewer, plotly)
 
 # Setwd (1º current wd where is the script, then we move back to the 
 # general folder)
@@ -109,6 +109,8 @@ Predictors_B0_floor<-predict(B0_floor_rf, dv_b0)
 ConfusionMatrix<-confusionMatrix(Predictors_B0_floor, dv_b0$FLOOR_orig) 
 ConfusionMatrix
 
+# It's the model selected, so let's add the floor to the validation dataset
+dv_b0$FLOOR<-Predictors_B0_floor
 rm(B0_floor_rf,Predictors_B0_floor, ConfusionMatrix)
 
 # KNN __________________________________________________________________________    
@@ -173,6 +175,8 @@ Predictors_b1_floor<-predict(B1_floor_svm, dv_b1[WAPS])
 ConfusionMatrix<-confusionMatrix(Predictors_b1_floor, dv_b1$FLOOR_orig) 
 ConfusionMatrix
 
+# It's the model selected, so let's add the floor to the validation dataset
+dv_b1$FLOOR<-Predictors_b1_floor
 rm(B1_floor_svm,Predictors_b1_floor, ConfusionMatrix)
 
 ##### C.3. Floor Building 2 ##### 
@@ -209,13 +213,16 @@ ConfusionMatrix
 rm(ConfusionMatrix, floor_b2_knn_pred)
 
 # SVM __________________________________________________________________________
-system.time(B2_floor_svm <- svm(y = dt_b2$FLOOR, x=dt_b2[WAPS], kernel = "linear"))
-saveRDS(B2_floor_svm, file = "./models/B2_floor_svm.rds")
+# system.time(B2_floor_svm <- svm(y = dt_b2$FLOOR, x=dt_b2[WAPS], kernel = "linear"))
+# saveRDS(B2_floor_svm, file = "./models/B2_floor_svm.rds")
 
 B2_floor_svm<-readRDS("./models/B2_floor_svm.rds")
 Predictors_b2_floor<-predict(B2_floor_svm, dv_b2[WAPS])
 ConfusionMatrix<-confusionMatrix(Predictors_b2_floor, dv_b2$FLOOR_orig) 
 ConfusionMatrix
+
+# It's the model selected, so let's add the floor to the validation dataset
+dv_b2$FLOOR<-Predictors_b2_floor
 
 rm(B2_floor_svm,Predictors_b2_floor, ConfusionMatrix)
 
@@ -253,6 +260,8 @@ B0_postResample
 
 error_knn<- dv_b0$LONGITUDE_orig- Predictors_B0_long
 
+# Adding longitude predictions
+dv_b0$LONGITUDE<-Predictors_B0_long
 
 # SVM __________________________________________________________________________
 # system.time(B0_long_svm <- svm(y = dt_b0$LONGITUDE, x=dt_b0[WAPS], kernel = "linear"))
@@ -296,6 +305,9 @@ b1_postResample<-postResample(Predictors_b1_long, dv_b1$LONGITUDE_orig)
 b1_postResample
 
 error_rf<- dv_b1$LONGITUDE_orig- Predictors_b1_long
+
+# Adding longitude predictions
+dv_b1$LONGITUDE<-Predictors_b1_long
 
 # KNN __________________________________________________________________________    
 # system.time(B1_long_knn<-knnreg(LONGITUDE ~., data = dt_b1[,c(WAPS, "LONGITUDE")]))
@@ -351,6 +363,9 @@ b2_postResample<-postResample(Predictors_b2_long, dv_b2$LONGITUDE_orig)
 b2_postResample
 
 error_rf<- dv_b2$LONGITUDE_orig- Predictors_b2_long
+
+# Adding longitude predictions
+dv_b2$LONGITUDE<-Predictors_b2_long
 
 # KNN __________________________________________________________________________    
 # system.time(B2_long_knn<-knnreg(LONGITUDE ~., data = dt_b2[,c(WAPS, "LONGITUDE")]))
@@ -421,6 +436,9 @@ B0_postResample
 
 error_knn<- dv_b0$LATITUDE_orig- Predictors_B0_lat
 
+# Adding longitude predictions
+dv_b0$LATITUDE<-Predictors_B0_lat
+
 # SVM __________________________________________________________________________
 # system.time(B0_lat_svm <- svm(y = dt_b0$LATITUDE, x=dt_b0[WAPS], kernel = "linear"))
 # saveRDS(B0_lat_svm, file = "./models/B0_lat_svm.rds")
@@ -463,6 +481,9 @@ b1_postResample<-postResample(Predictors_b1_lat, dv_b1$LATITUDE_orig)
 b1_postResample
 
 error_rf<- dv_b1$LATITUDE_orig- Predictors_b1_lat
+
+# Adding longitude predictions
+dv_b1$LATITUDE<-Predictors_b1_lat
 
 # KNN __________________________________________________________________________    
 # system.time(B1_lat_knn<-knnreg(LATITUDE ~., data = dt_b1[,c(WAPS, "LATITUDE")]))
@@ -530,6 +551,9 @@ b2_postResample
 
 error_knn<- dv_b2$LATITUDE_orig- Predictors_b2_lat
 
+# Adding longitude predictions
+dv_b2$LATITUDE<-Predictors_b2_lat
+
 # SVM __________________________________________________________________________
 # system.time(B2_lat_svm <- svm(y = dt_b2$LATITUDE, x=dt_b2[WAPS], kernel = "linear"))
 # saveRDS(B2_lat_svm, file = "./models/B2_lat_svm.rds")
@@ -556,28 +580,29 @@ rm(error_rf, error_knn, error_svm,B2_lat_rf,B2_lat_knn, B2_lat_svm,
 
 
 
-#### 16. FINAL VISUALIZATION ####
-VarInd<-c("LATITUDE", "LONGITUDE", "FLOOR")
-VisLatLon<- gdata::combine(DataValidOrig[VarInd], DataValid[VarInd]) 
-VisLatLon$source<-ifelse(VisLatLon$source=="DataValidOrig[VarInd]", "Original", "Predicted")
-VisLatLon$source<-as.factor(VisLatLon$source)
+#### F. FINAL VISUALIZATIONS ####
+var_pred<-c("BUILDINGID", "FLOOR", "LONGITUDE","LATITUDE")
+var_orig<-c("BUILDINGID_orig","FLOOR_orig", "LONGITUDE_orig", "LATITUDE_orig")
+dt_prediction<- rbind(dv_b0[var_pred], dv_b1[var_pred], dv_b2[var_pred])
+dt_original<- rbind(dv_b0[var_orig], dv_b1[var_orig], dv_b2[var_orig])
+colnames(dt_original)<-var_pred
 
-p <- plot_ly(VisLatLon, x = ~LONGITUDE, y = ~LATITUDE, z = ~FLOOR, color = ~source,
-             colors=c("grey","blue")) %>%
-  add_markers() %>%
-  
-  layout(scene = list(xaxis = list(title = 'Longitude'),
-                      yaxis = list(title = 'Latitude'),
-                      zaxis = list(title = 'Floor')))
+data_full<-gdata::combine(dt_prediction, dt_original) 
 
-ggplot(DataValidOrig, aes(x = LONGITUDE, y = LATITUDE)) + 
-  geom_point (stat="identity", position=position_dodge(),color="grey53") + 
-  labs(x = "Longitude", y = "Latitude", title = "Predictions per Floor")  +
-  facet_wrap(~FLOOR) + 
-  geom_point(data = DataValid, aes(x = LONGITUDE, y = LATITUDE), color="blue") 
+# p <- plot_ly(data_full, x = ~LONGITUDE, y = ~LATITUDE, z = ~FLOOR, color = ~source,
+#              colors=c("grey","blue")) %>%
+#   add_markers() %>%
+#   
+#   layout(scene = list(xaxis = list(title = 'Longitude'),
+#                       yaxis = list(title = 'Latitude'),
+#                       zaxis = list(title = 'Floor')))
 
-plot(LATITUDE ~ LONGITUDE, data = DataValidOrig, pch = 20, col = "grey53")
-points(LATITUDE ~ LONGITUDE, data = DataValid, pch = 20, col = "blue")
+ggplot(data_full, aes(x= LONGITUDE, y= LATITUDE, color=source)) +
+  geom_point(stat="identity", alpha=0.2) +
+  facet_wrap(~FLOOR) +
+
+plot(LATITUDE ~ LONGITUDE, data = dt_original, pch = 20, col = "grey53")
+points(LATITUDE ~ LONGITUDE, data = dt_prediction, pch = 20, col = "blue")
 
 stopCluster(cluster)
 rm(cluster)

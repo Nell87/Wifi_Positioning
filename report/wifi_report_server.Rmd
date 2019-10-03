@@ -123,8 +123,8 @@ Here you can see a summary of the models that we trained. We selected the best m
 </ul>
 
 ## D. CONCLUSIONS ##
-We were able to determine a person's location with a certain margin of error (as we saw in the previous analysis). Let's check in which areas we have the large amount of errors. 
-
+We were able to determine a person's location with a certain margin of error (as we saw in the previous analysis). Let's check where we have the largest number of errors.</br>
+![](final_errors.PNG) 
 
 ## E. NEXT STEPS ##
 - Improve the structure of the report (add more details)
