@@ -18,7 +18,6 @@ This is only a summary of the process, If you want to know more details, you can
   - Get rid of the user 6
   - Remove “near-zero variance” predictors and registers
   - Remove WAP 248
-- **Run the CRUD_app_shiny.R code**. The credentials.R and the CRUD_app_shiny.R files must be in the same folder. 
 
 ## 2. FEATURE ENGINEERING
 It’s about creating new input features from the existing ones (we will use them in our predictions):
