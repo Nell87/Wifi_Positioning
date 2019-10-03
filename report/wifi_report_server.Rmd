@@ -109,19 +109,30 @@ It’s about creating new input features from the existing ones (we will use the
 ## C. MODELING & ERROR ANALYSIS ##
 Here you can see a summary of the models that we trained. We selected the best models based on the analysis of the errors: </br>
 <ul>
+  </br>
   <li>**In classification**: we tried to avoid large errors in the identification of the floor, so we checked the classification matrix. For example, a large error can be predicting that someone is going to be on floor 3 when this person is actually on floor 0. </li>
   ![](Models_Build_Floor.PNG){width=500px}
+  </br></br>
  
-  <li>**In regression**: we tried to avoid those models with large outliers (even if they have a better R2/RMSE), so we checked the distribution of the errors</li>
-   ![](floor.png) 
+  <li>**In regression (for the longitude)**: we tried to avoid those models with large outliers (even if they have a better R2/RMSE), so we checked the distribution of the errors</li>
+   ![](Models_longitude.PNG) 
+   </br>
+   </br>
+ <li>**In regression (for the latitude)**: the goal was the same, so we checked the distribution of the errors</li>
+   ![](Models_latitude.PNG) 
 </ul>
 
 ## D. CONCLUSIONS ##
+We were able to determine a person's location with a certain margin of error (as we saw in the previous analysis). Let's check in which areas we have the large amount of errors. 
+
 
 ## E. NEXT STEPS ##
-- Improve the report
+- Improve the structure of the report (add more details)
+- A deeper analysis of errors
 - Normalize rows
 - PCA
+- H2O Package
+
 
 
 
