@@ -275,14 +275,118 @@ ggplot(error, aes(x=Value, fill=Model)) +
   scale_x_continuous(breaks=seq(-50, 50, 10)) +
   facet_grid(~Model)
 
-
-
-
 rm(error_rf, error_knn, error_svm,B0_long_rf,B0_long_knn, B0_long_svm, 
-   Predictors_B0_long,B0_postResample)
+   Predictors_B0_long,B0_postResample, error)
 
 ##### D.2. Longitude building 1 #####
+# Random forest ________________________________________________________________
+# bestmtry_dt_b1<-tuneRF(dt_b1[WAPS], dt_b1$LONGITUDE, ntreeTry=100, stepFactor=2, 
+#                        improve=0.05,trace=TRUE, plot=T)   # <- 103
+
+# system.time(B1_long_rf<-randomForest(y=dt_b1$LONGITUDE, x=dt_b1[WAPS], 
+#                                         importance=T,maximize=T,
+#                                          method="rf", trControl=fitControl,
+#                                          ntree=100, mtry=103,allowParalel=TRUE))
+ 
+# saveRDS(B1_long_rf, file = "./models/B1_long_rf.rds")
+
+B1_long_rf<-readRDS("./models/B1_long_rf.rds")
+Predictors_b1_long<-predict(B1_long_rf, dv_b1)
+b1_postResample<-postResample(Predictors_b1_long, dv_b1$LONGITUDE_orig)
+b1_postResample
+
+error_rf<- dv_b1$LONGITUDE_orig- Predictors_b1_long
+
+# KNN __________________________________________________________________________    
+# system.time(B1_long_knn<-knnreg(LONGITUDE ~., data = dt_b1[,c(WAPS, "LONGITUDE")]))
+# saveRDS(B1_long_knn, file = "./models/B1_long_knn.rds")
+
+B1_long_knn<-readRDS("./models/B1_long_knn.rds")
+Predictors_b1_long<-predict(B1_long_knn, dv_b1)
+b1_postResample<-postResample(Predictors_b1_long, dv_b1$LONGITUDE_orig)
+b1_postResample
+
+error_knn<- dv_b1$LONGITUDE_orig- Predictors_b1_long
+
+
+# SVM __________________________________________________________________________
+# system.time(B1_long_svm <- svm(y = dt_b1$LONGITUDE, x=dt_b1[WAPS], kernel = "linear"))
+# saveRDS(B1_long_svm, file = "./models/B1_long_svm.rds")
+
+B1_long_svm<-readRDS("./models/B1_long_svm.rds")
+Predictors_b1_long<-predict(B1_long_svm, dv_b1[WAPS])
+b1_postResample<-postResample(Predictors_b1_long, dv_b1$LONGITUDE_orig)
+b1_postResample
+
+error_svm<- dv_b1$LONGITUDE_orig- Predictors_b1_long
+
+# Plot the error distribution __________________________________________________
+error<-cbind(error_knn, error_rf, error_svm)
+error<-melt(error) %>% select(-Var1)
+colnames(error)<-c("Model", "Value")
+ggplot(error, aes(x=Value, fill=Model)) + 
+  geom_histogram(alpha = 0.3, aes(y = ..density..), position = 'identity') +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_x_continuous(breaks=seq(-50, 50, 10)) +
+  facet_grid(~Model)
+
+rm(error_rf, error_knn, error_svm,B1_long_rf,B1_long_knn, B1_long_svm, 
+   Predictors_b1_long,b1_postResample, error)
+
 ##### D.3. Longitude building 2 #####
+# Random forest ________________________________________________________________
+# bestmtry_dt_b2<-tuneRF(dt_b2[WAPS], dt_b2$LONGITUDE, ntreeTry=100, stepFactor=2, 
+#                         improve=0.05,trace=TRUE, plot=T)   # <- 52
+
+# system.time(B2_long_rf<-randomForest(y=dt_b2$LONGITUDE, x=dt_b2[WAPS], 
+#                                          importance=T,maximize=T,
+#                                           method="rf", trControl=fitControl,
+#                                           ntree=100, mtry=52,allowParalel=TRUE))
+
+saveRDS(B2_long_rf, file = "./models/B2_long_rf.rds")
+
+B2_long_rf<-readRDS("./models/B2_long_rf.rds")
+Predictors_b2_long<-predict(B2_long_rf, dv_b2)
+b2_postResample<-postResample(Predictors_b2_long, dv_b2$LONGITUDE_orig)
+b2_postResample
+
+error_rf<- dv_b2$LONGITUDE_orig- Predictors_b2_long
+
+# KNN __________________________________________________________________________    
+system.time(B2_long_knn<-knnreg(LONGITUDE ~., data = dt_b2[,c(WAPS, "LONGITUDE")]))
+saveRDS(B2_long_knn, file = "./models/B2_long_knn.rds")
+
+B2_long_knn<-readRDS("./models/B2_long_knn.rds")
+Predictors_b2_long<-predict(B2_long_knn, dv_b2)
+b2_postResample<-postResample(Predictors_b2_long, dv_b2$LONGITUDE_orig)
+b2_postResample
+
+error_knn<- dv_b2$LONGITUDE_orig- Predictors_b2_long
+
+
+# SVM __________________________________________________________________________
+system.time(B2_long_svm <- svm(y = dt_b2$LONGITUDE, x=dt_b2[WAPS], kernel = "linear"))
+saveRDS(B2_long_svm, file = "./models/B2_long_svm.rds")
+
+B2_long_svm<-readRDS("./models/B2_long_svm.rds")
+Predictors_b2_long<-predict(B2_long_svm, dv_b2[WAPS])
+b2_postResample<-postResample(Predictors_b2_long, dv_b2$LONGITUDE_orig)
+b2_postResample
+
+error_svm<- dv_b2$LONGITUDE_orig- Predictors_b2_long
+
+# Plot the error distribution __________________________________________________
+error<-cbind(error_knn, error_rf, error_svm)
+error<-melt(error) %>% select(-Var1)
+colnames(error)<-c("Model", "Value")
+ggplot(error, aes(x=Value, fill=Model)) + 
+  geom_histogram(alpha = 0.3, aes(y = ..density..), position = 'identity') +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_x_continuous(breaks=seq(-50, 50, 10)) +
+  facet_grid(~Model)
+
+rm(error_rf, error_knn, error_svm,b2_long_rf,b2_long_knn, b2_long_svm, 
+   Predictors_b2_long,b2_postResample, error)
 
 ##### E.PREDICTING LATITUDE PER BUILDING (1 model per building) ##### 
 ##### E.1. Latitude building 0
